@@ -132,6 +132,8 @@ NOTES:
  *      the correct answers.
  */
 
+ ~ ! &
+
 
 #endif
 //1
@@ -143,7 +145,7 @@ NOTES:
  *   Rating: 1
  */
 int bitXor(int x, int y) {
-  return 2;
+  return ~(x&y) & ~(~x & ~y) ;
 }
 /* 
  * tmin - return minimum two's complement integer 
@@ -153,7 +155,7 @@ int bitXor(int x, int y) {
  */
 int tmin(void) {
 
-  return 2;
+  return 1<<31;
 
 }
 //2
@@ -165,7 +167,9 @@ int tmin(void) {
  *   Rating: 1
  */
 int isTmax(int x) {
-  return 2;
+  int m = !(~((x + 1) ^ x));
+  int n = !!(x+1);
+  return m & n;;
 }
 /* 
  * allOddBits - return 1 if all odd-numbered bits in word set to 1
@@ -176,7 +180,11 @@ int isTmax(int x) {
  *   Rating: 2
  */
 int allOddBits(int x) {
-  return 2;
+
+  int a=0xAA;
+  int b= a<<8 |a;
+  int c=b<<16 |b;
+  return !(c^(x&c));
 }
 /* 
  * negate - return -x 
@@ -186,7 +194,7 @@ int allOddBits(int x) {
  *   Rating: 2
  */
 int negate(int x) {
-  return 2;
+  return ~x+1;
 }
 //3
 /* 
@@ -199,7 +207,10 @@ int negate(int x) {
  *   Rating: 3
  */
 int isAsciiDigit(int x) {
-  return 2;
+  int a= !(x>>3 ^ 0x06);
+  int b= !(x^0x38);
+  int c= !(x^0x39);
+  return a|b|c;
 }
 /* 
  * conditional - same as x ? y : z 
@@ -209,7 +220,9 @@ int isAsciiDigit(int x) {
  *   Rating: 3
  */
 int conditional(int x, int y, int z) {
-  return 2;
+
+  int mask= ~(!x)+1;
+  return (mask&y)|(~mask&z);
 }
 /* 
  * isLessOrEqual - if x <= y  then return 1, else return 0 
@@ -293,4 +306,8 @@ int floatFloat2Int(unsigned uf) {
  */
 unsigned floatPower2(int x) {
     return 2;
+}
+
+int bitXor(int x, int y) {
+  return 2;
 }
