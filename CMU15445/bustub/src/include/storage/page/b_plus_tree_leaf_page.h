@@ -53,7 +53,7 @@ class BPlusTreeLeafPage : public BPlusTreePage {
   auto Insert(const KeyType &key, const ValueType &value, const KeyComparator &comparator)-> int;
   auto Lookup(const KeyType &key, ValueType *value, const KeyComparator &comparator) const -> bool;
   auto RemoveAndDeleteRecord(const KeyType &key, const KeyComparator &comparator)->int;
-
+  const MappingType &GetItem(int index);
 
   auto KeyIndex(const KeyType &key, const KeyComparator &comparator) const -> int;
   
@@ -65,11 +65,13 @@ class BPlusTreeLeafPage : public BPlusTreePage {
 
   void MoveFirstToEndOf(BPlusTreeLeafPage *recipient);
 
+  void CopyLastFrom(const MappingType &item);
+
   void MoveLastToFrontOf(BPlusTreeLeafPage *recipient);
 
   void CopyFirstFrom(const MappingType &item);
 
-  void CopyLastFrom(const MappingType &item);
+  
 
  private:
   page_id_t next_page_id_;

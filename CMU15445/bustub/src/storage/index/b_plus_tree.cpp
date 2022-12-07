@@ -35,11 +35,11 @@ auto BPLUSTREE_TYPE::IsEmpty() const -> bool { return root_page_id_ == INVALID_P
 INDEX_TEMPLATE_ARGUMENTS
 auto BPLUSTREE_TYPE::GetValue(const KeyType &key, std::vector<ValueType> *result, Transaction *transaction) -> bool {
   Page *page = FindLeafPage(key, false);
-  LeafPage *leaf_page = reinterpret_cast<LeafPage *>(root_page->GetData());
+  LeafPage *leaf_node = reinterpret_cast<LeafPage *>(page->GetData());
   ValueType value{};
   bool is_exist = leaf_node->Lookup(key, &value, comparator_);
 
-  buffer_pool_manager_->UnpinPage(leaf_page->GetPageId(), false);  // unpin leaf page
+  buffer_pool_manager_->UnpinPage(leaf_node->GetPageId(), false);  // unpin leaf page
 
   if (!is_exist) {
     return false;
@@ -360,38 +360,51 @@ auto BPLUSTREE_TYPE::Coalesce(N **neighbor_node, N **node,
 INDEX_TEMPLATE_ARGUMENTS
 template <typename N>
 void BPLUSTREE_TYPE::Redistribute(N *neighbor_node, N *node, int index) {
-  InternalPage *parent_page =
-      reinterpret_cast<InternalPage *>(buffer_pool_manager_->FetchPage(node->GetParentPageId())->GetData());
-  if (index == 0) {
-    // 右边节点在父节点中对应的index
-    int index = parent_page->ValueIndex(neighbor_node->GetPageId());
-    if (neighbor_node->IsLeafPage()) {
-      LeafPage *Leaf_neighbor_node = reinterpret_cast<LeafPage *>(neighbor_node);
-      LeafPage *Leaf_node = reinterpret_cast<LeafPage *>(node);
-      Leaf_neighbor_node->MoveFirstToEndOf(Leaf_node);
-      parent_page->SetKeyAt(index, Leaf_neighbor_node->KeyAt(0));
-    } else {
-      InternalPage *Internal_neighbor_node = reinterpret_cast<InternalPage *>(neighbor_node);
-      InternalPage *Internal_node = reinterpret_cast<InternalPage *>(node);
-      Internal_neighbor_node->MoveFirstToEndOf(Internal_node, parent_page->KeyAt(index), buffer_pool_manager_);
-      parent_page->SetKeyAt(index, Internal_neighbor_node->KeyAt(0));
+  Page *parent_page = buffer_pool_manager_->FetchPage(node->GetParentPageId());
+  InternalPage *parent = reinterpret_cast<InternalPage *>(parent_page->GetData());  // parent of node
+
+  // node是之前刚被删除过一个key的结点
+  // index=0，则neighbor是node后继结点，表示：node(left)      neighbor(right)
+  // index>0，则neighbor是node前驱结点，表示：neighbor(left)  node(right)
+  // 注意更新parent结点的相关kv对
+
+  if (node->IsLeafPage()) {
+    LeafPage *leaf_node = reinterpret_cast<LeafPage *>(node);
+    LeafPage *neighbor_leaf_node = reinterpret_cast<LeafPage *>(neighbor_node);
+    if (index == 0) {  // node -> neighbor
+      // LOG_INFO("Redistribute leaf, index=0, pid=%d node->neighbor", node->GetPageId());
+      // move neighbor's first to node's end
+      neighbor_leaf_node->MoveFirstToEndOf(leaf_node);
+      parent->SetKeyAt(1, neighbor_leaf_node->KeyAt(0));
+    } else {  // neighbor -> node
+      // move neighbor's last to node's front
+      // LOG_INFO("Redistribute leaf, index=%d, pid=%d neighbor->node", index, node->GetPageId());
+      neighbor_leaf_node->MoveLastToFrontOf(leaf_node);
+      parent->SetKeyAt(index, leaf_node->KeyAt(0));
     }
   } else {
-    // 右边节点在父节点中对应的index
-    int index = parent_page->ValueIndex(node->GetPageId());
-    if (neighbor_node->IsLeafPage()) {
-      LeafPage *Leaf_neighbor_node = reinterpret_cast<LeafPage *>(neighbor_node);
-      LeafPage *Leaf_node = reinterpret_cast<LeafPage *>(node);
-      Leaf_neighbor_node->MoveLastToFrontOf(Leaf_node);
-      parent_page->SetKeyAt(index, Leaf_node->KeyAt(0));
-    } else {
-      InternalPage *Internal_neighbor_node = reinterpret_cast<InternalPage *>(neighbor_node);
-      InternalPage *Internal_node = reinterpret_cast<InternalPage *>(node);
-      Internal_neighbor_node->MoveLastToFrontOf(Internal_node, parent_page->KeyAt(index), buffer_pool_manager_);
-      parent_page->SetKeyAt(index, Internal_node->KeyAt(0));
+    InternalPage *internal_node = reinterpret_cast<InternalPage *>(node);
+    InternalPage *neighbor_internal_node = reinterpret_cast<InternalPage *>(neighbor_node);
+    if (index == 0) {  // case: node(left) and neighbor(right)
+      // LOG_INFO("Redistribute internal, index=0, pid=%d node->neighbor", node->GetPageId());
+      // MoveFirstToEndOf do this:
+      // 1 set neighbor's first key to parent's second key（详见MoveFirstToEndOf函数）
+      // 2 move neighbor's first to node's end
+      neighbor_internal_node->MoveFirstToEndOf(internal_node, parent->KeyAt(1), buffer_pool_manager_);
+      // set parent's second key to neighbor's "new" first key
+      parent->SetKeyAt(1, neighbor_internal_node->KeyAt(0));
+    } else {  // case: neighbor(left) and node(right)
+      // LOG_INFO("Redistribute internal, index=%d, pid=%d neighbor->node", index, node->GetPageId());
+      // MoveLastToFrontOf do this:
+      // 1 set node's first key to parent's index key（详见MoveLastToFrontOf函数）
+      // 2 move neighbor's last to node's front
+      neighbor_internal_node->MoveLastToFrontOf(internal_node, parent->KeyAt(index), buffer_pool_manager_);
+      // set parent's index key to node's "new" first key
+      parent->SetKeyAt(index, internal_node->KeyAt(0));
     }
   }
   buffer_pool_manager_->UnpinPage(parent_page->GetPageId(), true);
+  // LOG_INFO("END redistribute");
 }
 
 

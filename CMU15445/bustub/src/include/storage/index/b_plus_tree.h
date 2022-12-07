@@ -100,7 +100,7 @@ class BPlusTree {
   template <typename N>
   auto FindSibling(N *node, N **sibling)->bool;
 
-  template <typename N>
+
   auto AdjustRoot(BPlusTreePage *old_root_node) -> bool;  
 
   template <typename N>

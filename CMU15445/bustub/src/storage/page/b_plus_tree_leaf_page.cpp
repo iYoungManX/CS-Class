@@ -88,7 +88,7 @@ auto B_PLUS_TREE_LEAF_PAGE_TYPE::Lookup(const KeyType &key, ValueType *value, co
 }
 
 INDEX_TEMPLATE_ARGUMENTS
-auto RemoveAndDeleteRecord(const KeyType &key, const KeyComparator &comparator) -> int
+auto B_PLUS_TREE_LEAF_PAGE_TYPE::RemoveAndDeleteRecord(const KeyType &key, const KeyComparator &comparator) -> int
 {
   int target_index = KeyIndex(key, comparator);                                  // 查找第一个>=key的的下标
   if (target_index == GetSize() || comparator(key, KeyAt(target_index)) != 0) {  // =key的下标不存在（只有>key的下标）
@@ -121,7 +121,7 @@ auto B_PLUS_TREE_LEAF_PAGE_TYPE::KeyIndex(const KeyType &key, const KeyComparato
 
 INDEX_TEMPLATE_ARGUMENTS
 void B_PLUS_TREE_LEAF_PAGE_TYPE::MoveAllTo(BPlusTreeLeafPage *recipient) {
-  recipient->CopyNFrom(array, GetSize());
+  recipient->CopyNFrom(array_, GetSize());
   SetSize(0);
 }
 
@@ -143,23 +143,23 @@ INDEX_TEMPLATE_ARGUMENTS
 void B_PLUS_TREE_LEAF_PAGE_TYPE::MoveFirstToEndOf(BPlusTreeLeafPage *recipient) {
   // LOG_INFO("LEAF BEGIN MoveFirstToEndOf");
   // first item (array[0]) of this page array copied to recipient page last
-  recipient->CopyLastFrom(array[0]);
-  // LOG_INFO("LEAF BEGIN delete array[0]");
-  // delete array[0], move array after index=0 to front by 1 size
+  recipient->CopyLastFrom(array_[0]);
+  // LOG_INFO("LEAF BEGIN delete array_[0]");
+  // delete array_[0], move array_ after index=0 to front by 1 size
   IncreaseSize(-1);
   for (int i = 0; i < GetSize(); i++) {
-    array[i] = array[i + 1];
+    array_[i] = array_[i + 1];
   }
   // LOG_INFO("LEAF END MoveFirstToEndOf");
 }
 
 /*
- * Copy the item into the end of my item list. (Append item to my array)
+ * Copy the item into the end of my item list. (Append item to my array_)
  */
 INDEX_TEMPLATE_ARGUMENTS
 void B_PLUS_TREE_LEAF_PAGE_TYPE::CopyLastFrom(const MappingType &item) {
   // LOG_INFO("LEAF BEGIN CopyLastFrom");
-  array[GetSize()] = item;
+  array_[GetSize()] = item;
   IncreaseSize(1);
   // LOG_INFO("LEAF END CopyLastFrom");
 }
@@ -169,8 +169,8 @@ void B_PLUS_TREE_LEAF_PAGE_TYPE::CopyLastFrom(const MappingType &item) {
  */
 INDEX_TEMPLATE_ARGUMENTS
 void B_PLUS_TREE_LEAF_PAGE_TYPE::MoveLastToFrontOf(BPlusTreeLeafPage *recipient) {
-  // last item (array[size-1]) of this page array inserted to recipient page first
-  recipient->CopyFirstFrom(array[GetSize() - 1]);
+  // last item (array_[size-1]) of this page array_ inserted to recipient page first
+  recipient->CopyFirstFrom(array_[GetSize() - 1]);
   // remove last item of this page
   IncreaseSize(-1);
 }
@@ -180,13 +180,20 @@ void B_PLUS_TREE_LEAF_PAGE_TYPE::MoveLastToFrontOf(BPlusTreeLeafPage *recipient)
  */
 INDEX_TEMPLATE_ARGUMENTS
 void B_PLUS_TREE_LEAF_PAGE_TYPE::CopyFirstFrom(const MappingType &item) {
-  // move array after index=0 to back by 1 size
+  // move array_ after index=0 to back by 1 size
   for (int i = GetSize(); i >= 0; i--) {
-    array[i + 1] = array[i];
+    array_[i + 1] = array_[i];
   }
-  // insert item to array[0]
-  array[0] = item;
+  // insert item to array_[0]
+  array_[0] = item;
   IncreaseSize(1);
+}
+
+
+INDEX_TEMPLATE_ARGUMENTS
+const MappingType &B_PLUS_TREE_LEAF_PAGE_TYPE::GetItem(int index) {
+  // replace with your own code
+  return array_[index];
 }
 
 

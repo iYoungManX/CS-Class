@@ -32,7 +32,7 @@ void B_PLUS_TREE_INTERNAL_PAGE_TYPE::Init(page_id_t page_id, page_id_t parent_id
 }
 /*
  * Helper method to get/set the key associated with input "index"(a.k.a
- * array_ offset)
+ * array__ offset)
  */
 INDEX_TEMPLATE_ARGUMENTS
 auto B_PLUS_TREE_INTERNAL_PAGE_TYPE::KeyAt(int index) const -> KeyType {
@@ -213,7 +213,7 @@ void B_PLUS_TREE_INTERNAL_PAGE_TYPE::MoveLastToFrontOf(BPlusTreeInternalPage *re
   // 那么必须在移动前将recipient的第一个key 赋值为 父结点中下标为index的middle_key
   recipient->SetKeyAt(0, middle_key);
   // last item (array[size-1]) of this page array inserted to recipient page first
-  recipient->CopyFirstFrom(array[GetSize() - 1], buffer_pool_manager);
+  recipient->CopyFirstFrom(array_[GetSize() - 1], buffer_pool_manager);
   // remove last item of this page
   IncreaseSize(-1);
 }
@@ -224,12 +224,12 @@ void B_PLUS_TREE_INTERNAL_PAGE_TYPE::MoveLastToFrontOf(BPlusTreeInternalPage *re
  */
 INDEX_TEMPLATE_ARGUMENTS
 void B_PLUS_TREE_INTERNAL_PAGE_TYPE::CopyFirstFrom(const MappingType &item, BufferPoolManager *buffer_pool_manager) {
-  // move array after index=0 to back by 1 size
+  // move array_ after index=0 to back by 1 size
   for (int i = GetSize(); i >= 0; i--) {
-    array[i + 1] = array[i];
+    array_[i + 1] = array_[i];
   }
-  // insert item to array[0]
-  array[0] = item;
+  // insert item to array_[0]
+  array_[0] = item;
 
   // update parent page id of child page
   Page *child_page = buffer_pool_manager->FetchPage(ValueAt(0));
