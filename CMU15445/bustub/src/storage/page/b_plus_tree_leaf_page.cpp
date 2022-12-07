@@ -37,11 +37,8 @@ void B_PLUS_TREE_LEAF_PAGE_TYPE::Init(page_id_t page_id, page_id_t parent_id, in
  * Helper methods to set/get next page id
  */
 INDEX_TEMPLATE_ARGUMENTS
-auto B_PLUS_TREE_LEAF_PAGE_TYPE::GetNextPageId() const -> page_id_t { 
-  return next_page_id_;
- }
- 
- 
+auto B_PLUS_TREE_LEAF_PAGE_TYPE::GetNextPageId() const -> page_id_t { return next_page_id_; }
+
 INDEX_TEMPLATE_ARGUMENTS
 void B_PLUS_TREE_LEAF_PAGE_TYPE::MoveHalfTo(BPlusTreeLeafPage *recipient) {
   int move_nums = GetSize() / 2;
@@ -51,7 +48,6 @@ void B_PLUS_TREE_LEAF_PAGE_TYPE::MoveHalfTo(BPlusTreeLeafPage *recipient) {
   recipient->IncreaseSize(move_nums);
 }
 
-
 INDEX_TEMPLATE_ARGUMENTS
 void B_PLUS_TREE_LEAF_PAGE_TYPE::CopyNFrom(MappingType *items, int size) {
   for (int cnt = 0; cnt < size; cnt++) {
@@ -59,50 +55,61 @@ void B_PLUS_TREE_LEAF_PAGE_TYPE::CopyNFrom(MappingType *items, int size) {
   }
 }
 
-
-
-
+INDEX_TEMPLATE_ARGUMENTS
+void B_PLUS_TREE_LEAF_PAGE_TYPE::SetNextPageId(page_id_t next_page_id) { this->next_page_id_ = next_page_id; }
 
 INDEX_TEMPLATE_ARGUMENTS
-void B_PLUS_TREE_LEAF_PAGE_TYPE::SetNextPageId(page_id_t next_page_id) {
-  this->next_page_id_=next_page_id;
-}
-
-INDEX_TEMPLATE_ARGUMENTS
-auto B_PLUS_TREE_LEAF_PAGE_TYPE::Insert(const KeyType &key, const ValueType &value, const KeyComparator &comparator)->int {
+auto B_PLUS_TREE_LEAF_PAGE_TYPE::Insert(const KeyType &key, const ValueType &value, const KeyComparator &comparator)
+    -> int {
   int index = KeyIndex(key, comparator);
   assert(index >= 0);
   int end = GetSize();
   for (int i = end; i > index; i--) {
-    array[i].first = array[i - 1].first;
-    array[i].second = array[i - 1].second;
+    array_[i].first = array_[i - 1].first;
+    array_[i].second = array_[i - 1].second;
   }
-  array[index].first = key;
-  array[index].second = value;
+  array_[index].first = key;
+  array_[index].second = value;
   IncreaseSize(1);
   return GetSize();
 }
 
 INDEX_TEMPLATE_ARGUMENTS
-auto B_PLUS_TREE_LEAF_PAGE_TYPE::Lookup(const KeyType &key, const KeyComparator &comparator) const -> ValueType {
-  assert(GetSize() > 1);
-  for (int i = 0; i < GetSize(); i++) {
-    if (comparator(key, array[i].first) < 0) {
-      return array[i - 1].second;
-    }
+auto B_PLUS_TREE_LEAF_PAGE_TYPE::Lookup(const KeyType &key, ValueType *value, const KeyComparator &comparator) const
+    -> bool {
+  int target_index = KeyIndex(key, comparator);                                  // 查找第一个>=key的的下标
+  if (target_index == GetSize() || comparator(key, KeyAt(target_index)) != 0) {  // =key的下标不存在（只有>key的下标）
+    // LOG_INFO("leaf node Lookup FAILURE key>all not ==");
+    return false;
   }
-  return array[GetSize() - 1].second;
+  // LOG_INFO("leaf node Lookup SUCCESS index=%d", target_index);
+  *value = array_[target_index].second;  // value是传出参数
+  return true;
 }
 
+INDEX_TEMPLATE_ARGUMENTS
+auto RemoveAndDeleteRecord(const KeyType &key, const KeyComparator &comparator) -> int
+{
+  int target_index = KeyIndex(key, comparator);                                  // 查找第一个>=key的的下标
+  if (target_index == GetSize() || comparator(key, KeyAt(target_index)) != 0) {  // =key的下标不存在（只有>key的下标）
+    return GetSize();
+  }
+  // delete array[target_index], move array after target_index to front by 1 size
+  IncreaseSize(-1);
+  for (int i = target_index; i < GetSize(); i++) {
+    array[i] = array[i + 1];
+  }
+  return GetSize();
+}
 
 INDEX_TEMPLATE_ARGUMENTS
-auto B_PLUS_TREE_LEAF_PAGE_TYPE::KeyIndex(const KeyType &key, const KeyComparator &comparator) const -> int{
+auto B_PLUS_TREE_LEAF_PAGE_TYPE::KeyIndex(const KeyType &key, const KeyComparator &comparator) const -> int {
   assert(GetSize() >= 0);
   int l = 0;
   int r = GetSize() - 1;
   while (l <= r) {
     int mid = (r - l) / 2 + l;
-    if (comparator(array[mid].first, key) < 0) {
+    if (comparator(array_[mid].first, key) < 0) {
       l = mid + 1;
     } else {
       r = mid - 1;
@@ -112,10 +119,22 @@ auto B_PLUS_TREE_LEAF_PAGE_TYPE::KeyIndex(const KeyType &key, const KeyComparato
 }
 
 
+INDEX_TEMPLATE_ARGUMENTS
+void B_PLUS_TREE_LEAF_PAGE_TYPE::MoveAllTo(BPlusTreeLeafPage *recipient) {
+  assert(recipient != nullptr);
+  int move_num = this->GetSize();
+  int recipient_start_index = recipient->GetSize();
+  for (int i = 0; i < move_num; i++) {
+    recipient->array[recipient_start_index + i] = this->array[i];
+  }
+  this->IncreaseSize(-1 * move_num);
+  recipient->IncreaseSize(move_num);
+}
+
 
 /*
  * Helper method to find and return the key associated with input "index"(a.k.a
- * array offset)
+ * array_ offset)
  */
 INDEX_TEMPLATE_ARGUMENTS
 auto B_PLUS_TREE_LEAF_PAGE_TYPE::KeyAt(int index) const -> KeyType {

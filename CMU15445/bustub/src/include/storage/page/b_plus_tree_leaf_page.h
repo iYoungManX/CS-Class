@@ -49,20 +49,23 @@ class BPlusTreeLeafPage : public BPlusTreePage {
   auto GetNextPageId() const -> page_id_t;
   void SetNextPageId(page_id_t next_page_id);
   auto KeyAt(int index) const -> KeyType;
-
+  // insert and delete method
   auto Insert(const KeyType &key, const ValueType &value, const KeyComparator &comparator)-> int;
+  auto Lookup(const KeyType &key, ValueType *value, const KeyComparator &comparator) const -> bool;
+  auto RemoveAndDeleteRecord(const KeyType &key, const KeyComparator &comparator)->int;
+
 
   auto KeyIndex(const KeyType &key, const KeyComparator &comparator) const -> int;
-
-  auto Lookup(const KeyType &key, const KeyComparator &comparator) const -> ValueType;
+  
+  void MoveAllTo(BPlusTreeLeafPage *recipient);
 
   void MoveHalfTo(BPlusTreeLeafPage *recipient);
 
-  void CopyNFrom(MappingType *items, int size)
+  void CopyNFrom(MappingType *items, int size);
 
  private:
   page_id_t next_page_id_;
   // Flexible array member for page data.
-  MappingType array_[1];
+  MappingType array_[0];
 };
 }  // namespace bustub

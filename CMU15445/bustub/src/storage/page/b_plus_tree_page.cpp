@@ -22,7 +22,7 @@ auto BPlusTreePage::IsLeafPage() const -> bool {
 }
 
 auto BPlusTreePage::IsRootPage() const -> bool { 
-    return page_type_== IndexPageType::INTERNAL_PAGE;
+    return parent_page_id_==INVALID_PAGE_ID;
 }
 
 

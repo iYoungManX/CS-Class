@@ -48,19 +48,10 @@ class BPlusTree {
   // Insert a key-value pair into this B+ tree.
   auto Insert(const KeyType &key, const ValueType &value, Transaction *transaction = nullptr) -> bool;
 
-  auto StartNewTree(const KeyType &key, const ValueType &value) -> void;
 
-  auto FindLeafPage(const KeyType &key, bool leftMost) -> Page*;
   // Remove a key and its value from this B+ tree.
   void Remove(const KeyType &key, Transaction *transaction = nullptr);
 
-  auto InsertIntoLeaf(const KeyType &key, const ValueType &value, Transaction *transaction)->bool;
-
-  template <typename N>
-  auto Split(N *node) -> N*;
-
-  void InsertIntoParent(BPlusTreePage *old_node, const KeyType &key, BPlusTreePage *new_node,
-                                      Transaction *transaction);
 
   // return the value associated with a given key
   auto GetValue(const KeyType &key, std::vector<ValueType> *result, Transaction *transaction = nullptr) -> bool;
@@ -87,6 +78,46 @@ class BPlusTree {
 
  private:
   void UpdateRootPageId(int insert_record = 0);
+
+  // helper function for insert
+  auto StartNewTree(const KeyType &key, const ValueType &value) -> void;
+
+  auto FindLeafPage(const KeyType &key, bool leftMost) -> Page*;
+
+
+  auto InsertIntoLeaf(const KeyType &key, const ValueType &value, Transaction *transaction)->bool;
+
+  template <typename N>
+  auto Split(N *node) -> N*;
+
+  template <typename N>
+  auto CoalesceOrRedistribute(N *node, Transaction *transaction)->bool;
+
+  template <typename N>
+  auto MaxSize(N *node)->int;
+
+
+  template <typename N>
+  auto FindSibling(N *node, N **sibling)->bool;
+
+  template <typename N>
+  auto AdjustRoot(BPlusTreePage *old_root_node) -> bool;  
+
+  template <typename N>
+  auto Coalesce(N **neighbor_node, N **node,
+                              BPlusTreeInternalPage<KeyType, page_id_t, KeyComparator> **parent, int index,
+                              Transaction *transaction) ->bool;
+
+
+  template <typename N>
+  void Redistribute(N *neighbor_node, N *node, int index);
+ 
+
+  void InsertIntoParent(BPlusTreePage *old_node, const KeyType &key, BPlusTreePage *new_node,
+                                      Transaction *transaction);
+
+
+
 
   /* Debug Routines for FREE!! */
   void ToGraph(BPlusTreePage *page, BufferPoolManager *bpm, std::ofstream &out) const;
