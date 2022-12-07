@@ -63,6 +63,14 @@ class BPlusTreeLeafPage : public BPlusTreePage {
 
   void CopyNFrom(MappingType *items, int size);
 
+  void MoveFirstToEndOf(BPlusTreeLeafPage *recipient);
+
+  void MoveLastToFrontOf(BPlusTreeLeafPage *recipient);
+
+  void CopyFirstFrom(const MappingType &item);
+
+  void CopyLastFrom(const MappingType &item);
+
  private:
   page_id_t next_page_id_;
   // Flexible array member for page data.

@@ -34,6 +34,17 @@ auto BPLUSTREE_TYPE::IsEmpty() const -> bool { return root_page_id_ == INVALID_P
  */
 INDEX_TEMPLATE_ARGUMENTS
 auto BPLUSTREE_TYPE::GetValue(const KeyType &key, std::vector<ValueType> *result, Transaction *transaction) -> bool {
+  Page *page = FindLeafPage(key, false);
+  LeafPage *leaf_page = reinterpret_cast<LeafPage *>(root_page->GetData());
+  ValueType value{};
+  bool is_exist = leaf_node->Lookup(key, &value, comparator_);
+
+  buffer_pool_manager_->UnpinPage(leaf_page->GetPageId(), false);  // unpin leaf page
+
+  if (!is_exist) {
+    return false;
+  }
+  result->push_back(value);
   return true;
 }
 
@@ -207,8 +218,8 @@ void BPLUSTREE_TYPE::Remove(const KeyType &key, Transaction *transaction) {
   }
   Page *page = FindLeafPage(key, false);  // unpin
   LeafPage *leaf_page = reinterpret_cast<LeafPage *>(page->GetData());
-  leaf_page->RemoveAndDeleteRecord(key, comparator_);
   assert(leaf_page != nullptr);
+  leaf_page->RemoveAndDeleteRecord(key, comparator_);
   if (leaf_page->GetSize() < leaf_page->GetMinSize()) {
     CoalesceOrRedistribute(leaf_page, transaction);
   }
