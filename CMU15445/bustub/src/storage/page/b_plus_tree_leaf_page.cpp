@@ -28,9 +28,12 @@ namespace bustub {
  */
 INDEX_TEMPLATE_ARGUMENTS
 void B_PLUS_TREE_LEAF_PAGE_TYPE::Init(page_id_t page_id, page_id_t parent_id, int max_size) {
-  this->SetPageId(page_id);
-  this->SetParentPageId(parent_id);
-  this->SetMaxSize(max_size);
+  SetPageType(IndexPageType::LEAF_PAGE);
+  SetPageId(page_id);
+  SetParentPageId(parent_id);
+  SetSize(0);                      // 最开始current size为0
+  SetMaxSize(max_size);            // max_size=LEAF_PAGE_SIZE-1 这里也可以减1，方便后续的拆分(Split)函数
+  SetNextPageId(INVALID_PAGE_ID);  // 最开始next page id不存在
 }
 
 /**
@@ -88,8 +91,7 @@ auto B_PLUS_TREE_LEAF_PAGE_TYPE::Lookup(const KeyType &key, ValueType *value, co
 }
 
 INDEX_TEMPLATE_ARGUMENTS
-auto B_PLUS_TREE_LEAF_PAGE_TYPE::RemoveAndDeleteRecord(const KeyType &key, const KeyComparator &comparator) -> int
-{
+auto B_PLUS_TREE_LEAF_PAGE_TYPE::RemoveAndDeleteRecord(const KeyType &key, const KeyComparator &comparator) -> int {
   int target_index = KeyIndex(key, comparator);                                  // 查找第一个>=key的的下标
   if (target_index == GetSize() || comparator(key, KeyAt(target_index)) != 0) {  // =key的下标不存在（只有>key的下标）
     return GetSize();
@@ -104,18 +106,20 @@ auto B_PLUS_TREE_LEAF_PAGE_TYPE::RemoveAndDeleteRecord(const KeyType &key, const
 
 INDEX_TEMPLATE_ARGUMENTS
 auto B_PLUS_TREE_LEAF_PAGE_TYPE::KeyIndex(const KeyType &key, const KeyComparator &comparator) const -> int {
-  assert(GetSize() >= 0);
   int l = 0;
   int r = GetSize() - 1;
-  while (l <= r) {
-    int mid = (r - l) / 2 + l;
-    if (comparator(array_[mid].first, key) < 0) {
-      l = mid + 1;
+  while (l < r) {
+    int mid = (l + r) >> 1;
+    if (comparator(KeyAt(mid), key) >= 0) {
+      r = mid;
     } else {
-      r = mid - 1;
+      l = mid + 1;
     }
   }
-  return r + 1;
+  if (comparator(KeyAt(l), key) < 0) {
+    return GetSize();
+  }
+  return l;
 }
 
 

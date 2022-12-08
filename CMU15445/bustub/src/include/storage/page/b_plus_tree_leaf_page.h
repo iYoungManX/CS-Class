@@ -56,7 +56,7 @@ class BPlusTreeLeafPage : public BPlusTreePage {
   const MappingType &GetItem(int index);
 
   auto KeyIndex(const KeyType &key, const KeyComparator &comparator) const -> int;
-  
+
   void MoveAllTo(BPlusTreeLeafPage *recipient);
 
   void MoveHalfTo(BPlusTreeLeafPage *recipient);
@@ -71,7 +71,7 @@ class BPlusTreeLeafPage : public BPlusTreePage {
 
   void CopyFirstFrom(const MappingType &item);
 
-  
+
 
  private:
   page_id_t next_page_id_;

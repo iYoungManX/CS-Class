@@ -101,7 +101,7 @@ class BPlusTree {
   auto FindSibling(N *node, N **sibling)->bool;
 
 
-  auto AdjustRoot(BPlusTreePage *old_root_node) -> bool;  
+  auto AdjustRoot(BPlusTreePage *old_root_node) -> bool;
 
   template <typename N>
   auto Coalesce(N **neighbor_node, N **node,
@@ -111,7 +111,6 @@ class BPlusTree {
 
   template <typename N>
   void Redistribute(N *neighbor_node, N *node, int index);
- 
 
   void InsertIntoParent(BPlusTreePage *old_node, const KeyType &key, BPlusTreePage *new_node,
                                       Transaction *transaction);

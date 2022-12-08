@@ -42,7 +42,7 @@ class BPlusTreeInternalPage : public BPlusTreePage {
   void SetKeyAt(int index, const KeyType &key);
   auto ValueAt(int index) const -> ValueType;
   auto Lookup(const KeyType &key, const KeyComparator &comparator) const -> ValueType;
-  void MoveHalfTo(BPlusTreeInternalPage *recipient,BufferPoolManager *buffer_pool_manager);
+  void MoveHalfTo(BPlusTreeInternalPage *recipient, BufferPoolManager *buffer_pool_manager);
   void CopyNFrom(MappingType *items, int size, BufferPoolManager *buffer_pool_manager);
   void PopulateNewRoot(const ValueType &old_value, const KeyType &new_key,
                                                      const ValueType &new_value);
@@ -62,7 +62,8 @@ class BPlusTreeInternalPage : public BPlusTreePage {
 
   void MoveLastToFrontOf(BPlusTreeInternalPage *recipient, const KeyType &middle_key,
                                                        BufferPoolManager *buffer_pool_manager);
-  void CopyFirstFrom(const MappingType &item, BufferPoolManager *buffer_pool_manager);                                                                                 
+  void CopyFirstFrom(const MappingType &item, BufferPoolManager *buffer_pool_manager);
+
  private:
   // Flexible array member for page data.
   MappingType array_[0];
