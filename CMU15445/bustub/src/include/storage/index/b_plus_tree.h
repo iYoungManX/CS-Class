@@ -12,6 +12,7 @@
 
 #include <queue>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "concurrency/transaction.h"
@@ -49,10 +50,8 @@ class BPlusTree {
   // Insert a key-value pair into this B+ tree.
   auto Insert(const KeyType &key, const ValueType &value, Transaction *transaction = nullptr) -> bool;
 
-
   // Remove a key and its value from this B+ tree.
   void Remove(const KeyType &key, Transaction *transaction = nullptr);
-
 
   // return the value associated with a given key
   auto GetValue(const KeyType &key, std::vector<ValueType> *result, Transaction *transaction = nullptr) -> bool;
@@ -77,14 +76,11 @@ class BPlusTree {
   // read data from file and remove one by one
   void RemoveFromFile(const std::string &file_name, Transaction *transaction = nullptr);
 
+  auto FindLeafPage(const KeyType &key, bool leftMost) -> Page *;
 
-  auto FindLeafPage(const KeyType &key, bool leftMost) -> Page*;
-
-  std::pair<Page *, bool> FindLeafPageByOperation(const KeyType &key, Operation operation = Operation::FIND,
-                                                  Transaction *transaction = nullptr, bool leftMost = false,
-                                                  bool rightMost = false);
-
-
+  auto FindLeafPageByOperation(const KeyType &key, Operation operation = Operation::FIND,
+                               Transaction *transaction = nullptr, bool leftMost = false, bool rightMost = false)
+      -> std::pair<Page *, bool>;
 
  private:
   void UpdateRootPageId(int insert_record = 0);
@@ -92,30 +88,25 @@ class BPlusTree {
   // helper function for insert
   auto StartNewTree(const KeyType &key, const ValueType &value) -> void;
 
-
-  auto InsertIntoLeaf(const KeyType &key, const ValueType &value, Transaction *transaction)->bool;
-
-  template <typename N>
-  auto Split(N *node) -> N*;
+  auto InsertIntoLeaf(const KeyType &key, const ValueType &value, Transaction *transaction) -> bool;
 
   template <typename N>
-  auto CoalesceOrRedistribute(N *node, Transaction *transaction, bool *root_is_latched = nullptr)->bool;
+  auto Split(N *node) -> N *;
 
   template <typename N>
-  auto MaxSize(N *node)->int;
-
+  auto CoalesceOrRedistribute(N *node, Transaction *transaction, bool *root_is_latched = nullptr) -> bool;
 
   template <typename N>
-  auto FindSibling(N *node, N **sibling)->bool;
+  auto MaxSize(N *node) -> int;
 
+  template <typename N>
+  auto FindSibling(N *node, N **sibling) -> bool;
 
   auto AdjustRoot(BPlusTreePage *old_root_node) -> bool;
 
   template <typename N>
-  auto Coalesce(N **neighbor_node, N **node,
-                              BPlusTreeInternalPage<KeyType, page_id_t, KeyComparator> **parent, int index,
-                              Transaction *transaction, bool *root_is_latched = nullptr) ->bool;
-
+  auto Coalesce(N **neighbor_node, N **node, BPlusTreeInternalPage<KeyType, page_id_t, KeyComparator> **parent,
+                int index, Transaction *transaction, bool *root_is_latched = nullptr) -> bool;
 
   template <typename N>
   void Redistribute(N *neighbor_node, N *node, int index);
@@ -130,8 +121,7 @@ class BPlusTree {
 
   // 判断node是否安全
   template <typename N>
-  bool IsSafe(N *node, Operation op);
-
+  auto IsSafe(N *node, Operation op) -> bool;
 
   /* Debug Routines for FREE!! */
   void ToGraph(BPlusTreePage *page, BufferPoolManager *bpm, std::ofstream &out) const;

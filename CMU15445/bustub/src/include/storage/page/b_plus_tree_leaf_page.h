@@ -50,15 +50,14 @@ class BPlusTreeLeafPage : public BPlusTreePage {
   void SetNextPageId(page_id_t next_page_id);
   auto KeyAt(int index) const -> KeyType;
   auto KeyIndex(const KeyType &key, const KeyComparator &comparator) const -> int;
-  const MappingType &GetItem(int index);
+  auto GetItem(int index) -> const MappingType &;
 
   // insert and delete method
-  auto Insert(const KeyType &key, const ValueType &value, const KeyComparator &comparator)-> int;
+  auto Insert(const KeyType &key, const ValueType &value, const KeyComparator &comparator) -> int;
   auto Lookup(const KeyType &key, ValueType *value, const KeyComparator &comparator) const -> bool;
-  auto RemoveAndDeleteRecord(const KeyType &key, const KeyComparator &comparator)->int;
+  auto RemoveAndDeleteRecord(const KeyType &key, const KeyComparator &comparator) -> int;
 
-
-    // Split and Merge utility methods
+  // Split and Merge utility methods
   void MoveHalfTo(BPlusTreeLeafPage *recipient);
   void MoveAllTo(BPlusTreeLeafPage *recipient);
   void MoveFirstToEndOf(BPlusTreeLeafPage *recipient);
