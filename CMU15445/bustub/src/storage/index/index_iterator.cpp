@@ -12,8 +12,8 @@ namespace bustub {
  * set your own input parameters
  */
 INDEX_TEMPLATE_ARGUMENTS
-INDEXITERATOR_TYPE::IndexIterator(BufferPoolManager *bpm, Page *page, int index):
-buffer_pool_manager_(bpm), page_(page), index_(index) {
+INDEXITERATOR_TYPE::IndexIterator(BufferPoolManager *bpm, Page *page, int index)
+    : buffer_pool_manager_(bpm), page_(page), index_(index) {
   leaf_ = reinterpret_cast<LeafPage *>(page_->GetData());
   // LOG_INFO("ENTER IndexIterator()");
   // LOG_INFO("LEAVE IndexIterator()");
@@ -31,9 +31,7 @@ auto INDEXITERATOR_TYPE::IsEnd() -> bool {
 }
 
 INDEX_TEMPLATE_ARGUMENTS
-auto INDEXITERATOR_TYPE::operator*() -> const MappingType & {
-  return leaf_->GetItem(index_);
-}
+auto INDEXITERATOR_TYPE::operator*() -> const MappingType & { return leaf_->GetItem(index_); }
 
 INDEX_TEMPLATE_ARGUMENTS
 auto INDEXITERATOR_TYPE::operator++() -> INDEXITERATOR_TYPE & {
@@ -49,11 +47,10 @@ auto INDEXITERATOR_TYPE::operator++() -> INDEXITERATOR_TYPE & {
     index_ = 0;                                              // reset index to zero
   }
   return *this;
-  }
-
+}
 
 INDEX_TEMPLATE_ARGUMENTS
-auto INDEXITERATOR_TYPE::operator==(const IndexIterator &itr) const ->bool{
+auto INDEXITERATOR_TYPE::operator==(const IndexIterator &itr) const -> bool {
   return leaf_->GetPageId() == itr.leaf_->GetPageId() && index_ == itr.index_;  // leaf page和index均相同
 }
 
@@ -61,7 +58,6 @@ INDEX_TEMPLATE_ARGUMENTS
 auto INDEXITERATOR_TYPE::operator!=(const IndexIterator &itr) const -> bool {
   return !(*this == itr);
 }  // 此处可用之前重载的==
-
 
 template class IndexIterator<GenericKey<4>, RID, GenericComparator<4>>;
 
