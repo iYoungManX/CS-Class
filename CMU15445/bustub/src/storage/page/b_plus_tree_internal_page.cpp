@@ -26,9 +26,11 @@ namespace bustub {
  */
 INDEX_TEMPLATE_ARGUMENTS
 void B_PLUS_TREE_INTERNAL_PAGE_TYPE::Init(page_id_t page_id, page_id_t parent_id, int max_size) {
-  this->SetPageId(page_id);
-  this->SetParentPageId(parent_id);
-  this->SetMaxSize(max_size);
+  SetPageType(IndexPageType::INTERNAL_PAGE);
+  SetPageId(page_id);
+  SetParentPageId(parent_id);
+  SetSize(0);            // 最开始current size为0
+  SetMaxSize(max_size);  // max_size=INTERNAL_PAGE_SIZE-1 这里一定要减1，因为内部页面的第一个key是无效的
 }
 /*
  * Helper method to get/set the key associated with input "index"(a.k.a
