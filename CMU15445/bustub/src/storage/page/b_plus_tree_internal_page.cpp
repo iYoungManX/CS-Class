@@ -125,7 +125,7 @@ void B_PLUS_TREE_INTERNAL_PAGE_TYPE::CopyNFrom(MappingType *items, int size, Buf
   for (int i = GetSize(); i < GetSize() + size; i++) {
     // ValueAt(i)得到的是array中的value指向的孩子结点的page id
     Page *child_page = buffer_pool_manager->FetchPage(ValueAt(i));
-    BPlusTreePage *child_node = reinterpret_cast<BPlusTreePage *>(child_page->GetData());  // 记得加上GetData()
+    auto child_node = reinterpret_cast<BPlusTreePage *>(child_page->GetData());  // 记得加上GetData()
     // Since it is an internal page, the moved entry(page)'s parent needs to be updated
     child_node->SetParentPageId(GetPageId());  // 特别注意这里，别写成child_page->GetPageId()
     // 注意，UnpinPage的dirty参数要为true，因为修改了page->data转为node后的ParentPageId，即修改了page->data

@@ -47,7 +47,7 @@ auto BPLUSTREE_TYPE::GetValue(const KeyType &key, std::vector<ValueType> *result
   Page *leaf_page = FindLeafPageByOperation(key, Operation::FIND, transaction).first;
 
   // 2 在leaf page里找这个key
-  LeafPage *leaf_node = reinterpret_cast<LeafPage *>(leaf_page->GetData());  // 记得加上GetData()
+  auto leaf_node = reinterpret_cast<LeafPage *>(leaf_page->GetData());  // 记得加上GetData()
 
   ValueType value{};
   bool is_exist = leaf_node->Lookup(key, &value, comparator_);
@@ -116,8 +116,8 @@ void BPLUSTREE_TYPE::StartNewTree(const KeyType &key, const ValueType &value) {
   UpdateRootPageId(1);  // insert root page id in header page
 
   // 3 使用leaf page的Insert函数插入(key,value)
-  LeafPage *root_node = reinterpret_cast<LeafPage *>(root_page->GetData());  // 记得加上GetData()
-  root_node->Init(new_page_id, INVALID_PAGE_ID, leaf_max_size_);             // 记得初始化为leaf_max_size
+  auto root_node = reinterpret_cast<LeafPage *>(root_page->GetData());  // 记得加上GetData()
+  root_node->Init(new_page_id, INVALID_PAGE_ID, leaf_max_size_);        // 记得初始化为leaf_max_size
   root_node->Insert(key, value, comparator_);
   // 4 unpin root page
   buffer_pool_manager_->UnpinPage(root_page->GetPageId(), true);  // 注意：这里dirty要置为true！
@@ -441,7 +441,7 @@ auto BPLUSTREE_TYPE::InsertIntoLeaf(const KeyType &key, const ValueType &value, 
 
 INDEX_TEMPLATE_ARGUMENTS
 template <typename N>
-N *BPLUSTREE_TYPE::Split(N *node) {
+auto BPLUSTREE_TYPE::Split(N *node) -> N * {
   // 1 缓冲池申请一个new page
   page_id_t new_page_id = INVALID_PAGE_ID;
   Page *new_page = buffer_pool_manager_->NewPage(&new_page_id);  // 注意new page的pin_count=1，之后记得unpin page
@@ -450,7 +450,7 @@ N *BPLUSTREE_TYPE::Split(N *node) {
   }
   // 2 分情况进行拆分
   auto new_node = reinterpret_cast<N *>(new_page->GetData());  // 记得加上GetData()
-  new_node->SetPageType(node->GetPageType());                // DEBUG
+  new_node->SetPageType(node->GetPageType());                  // DEBUG
 
   if (node->IsLeafPage()) {  // leaf page
     auto old_leaf_node = reinterpret_cast<LeafPage *>(node);
@@ -892,12 +892,11 @@ auto BPLUSTREE_TYPE::AdjustRoot(BPlusTreePage *old_root_node) -> bool {
 //   return true;
 // }
 
-
 INDEX_TEMPLATE_ARGUMENTS
 template <typename N>
-bool BPLUSTREE_TYPE::Coalesce(N **neighbor_node, N **node,
+auto BPLUSTREE_TYPE::Coalesce(N **neighbor_node, N **node,
                               BPlusTreeInternalPage<KeyType, page_id_t, KeyComparator> **parent, int index,
-                              Transaction *transaction, bool *root_is_latched) {
+                              Transaction *transaction, bool *root_is_latched) -> bool {
   // Assume that *neighbor_node is the left sibling of *node (neighbor -> node)
   // index表示node在parent中的孩子指针(value)的下标
   // key_index表示 交换后的 node在parent中的孩子指针(value)的下标
@@ -911,19 +910,19 @@ bool BPLUSTREE_TYPE::Coalesce(N **neighbor_node, N **node,
 
   // Move items from node to neighbor_node
   if ((*node)->IsLeafPage()) {
-    LeafPage *leaf_node = reinterpret_cast<LeafPage *>(*node);
-    LeafPage *neighbor_leaf_node = reinterpret_cast<LeafPage *>(*neighbor_node);
+    auto leaf_node = reinterpret_cast<LeafPage *>(*node);
+    auto neighbor_leaf_node = reinterpret_cast<LeafPage *>(*neighbor_node);
     leaf_node->MoveAllTo(neighbor_leaf_node);
     neighbor_leaf_node->SetNextPageId(leaf_node->GetNextPageId());
     // LOG_INFO("Coalesce leaf, index=%d, pid=%d neighbor->node", index, (*node)->GetPageId());
   } else {
-    InternalPage *internal_node = reinterpret_cast<InternalPage *>(*node);
-    InternalPage *neighbor_internal_node = reinterpret_cast<InternalPage *>(*neighbor_node);
+    auto internal_node = reinterpret_cast<InternalPage *>(*node);
+    auto neighbor_internal_node = reinterpret_cast<InternalPage *>(*neighbor_node);
     // MoveAllTo do this: set node's first key to middle_key and move node to neighbor
     internal_node->MoveAllTo(neighbor_internal_node, middle_key, buffer_pool_manager_);
     // LOG_INFO("Coalesce internal, index=%d, pid=%d neighbor->node", index, (*node)->GetPageId());
   }
-    // 在缓冲池中删除node
+  // 在缓冲池中删除node
   // buffer_pool_manager_->UnpinPage((*node)->GetPageId(), true);
   // buffer_pool_manager_->DeletePage((*node)->GetPageId());
 
@@ -933,7 +932,6 @@ bool BPLUSTREE_TYPE::Coalesce(N **neighbor_node, N **node,
   // 因为parent中删除了kv对，所以递归调用CoalesceOrRedistribute函数判断parent结点是否需要被删除
   return CoalesceOrRedistribute(*parent, transaction, root_is_latched);
 }
-
 
 INDEX_TEMPLATE_ARGUMENTS
 template <typename N>
@@ -1034,7 +1032,6 @@ auto BPLUSTREE_TYPE::End() -> INDEXITERATOR_TYPE {
   // }  // 结束循环时，leaf_node为叶子层的最后一个结点（rightmost leaf page）
   // 注意传入的index为leaf_node->GetSize()
   return INDEXITERATOR_TYPE(buffer_pool_manager_, leaf_page, leaf_node->GetSize());  // 注意：此时leaf_node没有unpin
-
 }
 /**
  * @return Page id of the root of this tree

@@ -55,7 +55,7 @@ void B_PLUS_TREE_LEAF_PAGE_TYPE::MoveHalfTo(BPlusTreeLeafPage *recipient) {
 INDEX_TEMPLATE_ARGUMENTS
 void B_PLUS_TREE_LEAF_PAGE_TYPE::CopyNFrom(MappingType *items, int size) {
   std::copy(items, items + size, array_ + GetSize());  // [items,items+size)复制到该page的array最后一个之后的空间
-  IncreaseSize(size);     
+  IncreaseSize(size);
 }
 
 INDEX_TEMPLATE_ARGUMENTS
