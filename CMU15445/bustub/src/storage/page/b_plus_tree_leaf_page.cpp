@@ -65,6 +65,10 @@ INDEX_TEMPLATE_ARGUMENTS
 auto B_PLUS_TREE_LEAF_PAGE_TYPE::Insert(const KeyType &key, const ValueType &value, const KeyComparator &comparator)
     -> int {
   int index = KeyIndex(key, comparator);
+
+  if (comparator(KeyAt(index), key) == 0) {  // 重复的key
+    return GetSize();
+  }
   assert(index >= 0);
   int end = GetSize();
   for (int i = end; i > index; i--) {
