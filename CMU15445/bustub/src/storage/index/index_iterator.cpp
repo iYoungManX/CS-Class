@@ -21,6 +21,7 @@ buffer_pool_manager_(bpm), page_(page), index_(index) {
 
 INDEX_TEMPLATE_ARGUMENTS
 INDEXITERATOR_TYPE::~IndexIterator() {
+  page_->RUnlatch();
   buffer_pool_manager_->UnpinPage(page_->GetPageId(), false);
 }  // NOLINT
 
@@ -39,7 +40,8 @@ auto INDEXITERATOR_TYPE::operator++() -> INDEXITERATOR_TYPE & {
   index_++;
   if (index_ == leaf_->GetSize() && leaf_->GetNextPageId() != INVALID_PAGE_ID) {
     Page *next_page = buffer_pool_manager_->FetchPage(leaf_->GetNextPageId());  // pin next leaf page
-
+    next_page->RLatch();
+    page_->RUnlatch();
     buffer_pool_manager_->UnpinPage(page_->GetPageId(), false);  // unpin current leaf page
 
     page_ = next_page;

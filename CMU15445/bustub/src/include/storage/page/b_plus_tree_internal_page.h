@@ -41,31 +41,35 @@ class BPlusTreeInternalPage : public BPlusTreePage {
   auto KeyAt(int index) const -> KeyType;
   void SetKeyAt(int index, const KeyType &key);
   auto ValueAt(int index) const -> ValueType;
+  auto ValueIndex(const ValueType &value) const->int;
+
+
   auto Lookup(const KeyType &key, const KeyComparator &comparator) const -> ValueType;
-  void MoveHalfTo(BPlusTreeInternalPage *recipient, BufferPoolManager *buffer_pool_manager);
-  void CopyNFrom(MappingType *items, int size, BufferPoolManager *buffer_pool_manager);
   void PopulateNewRoot(const ValueType &old_value, const KeyType &new_key,
                                                      const ValueType &new_value);
   auto InsertNodeAfter(const ValueType &old_value, const KeyType &new_key,
                                                     const ValueType &new_value)->int;
-  auto ValueIndex(const ValueType &value) const->int;
-  void MoveAllTo(BPlusTreeInternalPage *recipient, const KeyType &middle_key,
-                                               BufferPoolManager *buffer_pool_manager);
   void Remove(int index);
-
   auto RemoveAndReturnOnlyChild() ->ValueType;
 
+  
+  void MoveAllTo(BPlusTreeInternalPage *recipient, const KeyType &middle_key,
+                                               BufferPoolManager *buffer_pool_manager);
+  void MoveHalfTo(BPlusTreeInternalPage *recipient, BufferPoolManager *buffer_pool_manager);
   void MoveFirstToEndOf(BPlusTreeInternalPage *recipient, const KeyType &middle_key,
                                                       BufferPoolManager *buffer_pool_manager);
-
-  void CopyLastFrom(const MappingType &item, BufferPoolManager *buffer_pool_manager);
-
   void MoveLastToFrontOf(BPlusTreeInternalPage *recipient, const KeyType &middle_key,
                                                        BufferPoolManager *buffer_pool_manager);
-  void CopyFirstFrom(const MappingType &item, BufferPoolManager *buffer_pool_manager);
+ 
+  
 
  private:
+  void CopyNFrom(MappingType *items, int size, BufferPoolManager *buffer_pool_manager);
+  void CopyLastFrom(const MappingType &item, BufferPoolManager *buffer_pool_manager);
+
+  void CopyFirstFrom(const MappingType &item, BufferPoolManager *buffer_pool_manager);
   // Flexible array member for page data.
   MappingType array_[0];
+  //std::mutex latch_;     // DEBUG
 };
 }  // namespace bustub

@@ -22,6 +22,7 @@
 namespace bustub {
 
 #define BPLUSTREE_TYPE BPlusTree<KeyType, ValueType, KeyComparator>
+enum class Operation { FIND = 0, INSERT, DELETE };  // 三种操作：查找、插入、删除
 
 /**
  * Main class providing the API for the Interactive B+ Tree.
@@ -76,13 +77,20 @@ class BPlusTree {
   // read data from file and remove one by one
   void RemoveFromFile(const std::string &file_name, Transaction *transaction = nullptr);
 
+
+  auto FindLeafPage(const KeyType &key, bool leftMost) -> Page*;
+
+  std::pair<Page *, bool> FindLeafPageByOperation(const KeyType &key, Operation operation = Operation::FIND,
+                                                  Transaction *transaction = nullptr, bool leftMost = false,
+                                                  bool rightMost = false);
+
+
+
  private:
   void UpdateRootPageId(int insert_record = 0);
 
   // helper function for insert
   auto StartNewTree(const KeyType &key, const ValueType &value) -> void;
-
-  auto FindLeafPage(const KeyType &key, bool leftMost) -> Page*;
 
 
   auto InsertIntoLeaf(const KeyType &key, const ValueType &value, Transaction *transaction)->bool;
@@ -91,7 +99,7 @@ class BPlusTree {
   auto Split(N *node) -> N*;
 
   template <typename N>
-  auto CoalesceOrRedistribute(N *node, Transaction *transaction)->bool;
+  auto CoalesceOrRedistribute(N *node, Transaction *transaction, bool *root_is_latched = nullptr)->bool;
 
   template <typename N>
   auto MaxSize(N *node)->int;
@@ -106,16 +114,23 @@ class BPlusTree {
   template <typename N>
   auto Coalesce(N **neighbor_node, N **node,
                               BPlusTreeInternalPage<KeyType, page_id_t, KeyComparator> **parent, int index,
-                              Transaction *transaction) ->bool;
+                              Transaction *transaction, bool *root_is_latched = nullptr) ->bool;
 
 
   template <typename N>
   void Redistribute(N *neighbor_node, N *node, int index);
 
   void InsertIntoParent(BPlusTreePage *old_node, const KeyType &key, BPlusTreePage *new_node,
-                                      Transaction *transaction);
+                        Transaction *transaction = nullptr, bool *root_is_latched = nullptr);
 
+  void UnlockPages(Transaction *transaction);
 
+  // unlock 和 unpin 事务中经过的所有parent page
+  void UnlockUnpinPages(Transaction *transaction);
+
+  // 判断node是否安全
+  template <typename N>
+  bool IsSafe(N *node, Operation op);
 
 
   /* Debug Routines for FREE!! */
@@ -130,6 +145,7 @@ class BPlusTree {
   KeyComparator comparator_;
   int leaf_max_size_;
   int internal_max_size_;
+  std::mutex root_latch_;  // 保护root page id不被改变
 };
 
 }  // namespace bustub
